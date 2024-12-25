@@ -1,0 +1,13 @@
+@import "primeicons/primeicons.css";
+
+.button-group {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+  }
+  
+  p-button {
+    min-width: 50px;
+  }
+  

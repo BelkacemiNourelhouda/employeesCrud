@@ -1,0 +1,309 @@
+<p-toolbar [style]="{ 'border-radius': '3rem', 'padding': '1rem 1rem 1rem 1.5rem' }">
+  <ng-template #start>
+    <div class="button-group">
+      <p-button
+      text severity="secondary"
+        outlined
+        icon="pi pi-refresh"
+        (onClick)="refreshEmployees()"
+      ></p-button>
+      <p-button
+        text severity="success"
+        icon="pi pi-plus"
+        (onClick)="addEmployee()"
+      ></p-button>
+      <p-button
+        text severity="info"
+        icon="pi pi-pencil"
+        (onClick)="updateEmployee()"
+        [disabled]="!selectedEmployees || selectedEmployees.length !== 1"
+      ></p-button>
+    
+      <p-button
+        text severity="warn"
+        icon="pi pi-eye"
+        (onClick)="detailEmployee()"
+        [disabled]="!selectedEmployees || selectedEmployees.length !== 1"
+      ></p-button>
+    
+      <p-button
+        text severity="danger"
+        icon="pi pi-trash"
+        (onClick)="deleteEmployees()"
+        [disabled]="!selectedEmployees || selectedEmployees.length === 0"
+      ></p-button>
+    </div>
+  </ng-template>
+  <ng-template #center>
+    <p-button label="Export" icon="pi pi-upload" severity="secondary" (onClick)="exportCSV($event)" />
+</ng-template>
+
+  <ng-template #end>
+      <p-iconfield iconPosition="left">
+        <p-inputicon styleClass="pi pi-search" />
+          <input
+            pInputText
+            type="text"
+            (input)="dt.filterGlobal(getEventValue($event), 'contains')"
+            placeholder="Search keyword" 
+            #filter/>
+        </p-iconfield>
+  </ng-template>
+</p-toolbar>
+
+<p-table
+  #dt
+  showGridlines
+  stripedRows
+  [customSort]="true"
+  [value]="employees"
+  [rows]="10"
+  [columns]="cols"
+  [paginator]="true"
+  [globalFilterFields]="['id', 'name', 'email', 'phone']"
+  [tableStyle]="{ 'min-width': '75rem'}"
+  [(selection)]="selectedEmployees"
+  [rowHover]="true"
+  dataKey="id"
+  currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+  [showCurrentPageReport]="true"
+  class="p-datatable-table"
+  >
+
+  <ng-template #header >
+      <tr>
+          <th style="width: 3rem">
+              <p-tableHeaderCheckbox />
+          </th>
+          <th pSortableColumn="id" style="min-width: 16rem">
+            ID
+            <p-sortIcon field="id" />
+          </th>
+          <th pSortableColumn="name" style="min-width:16rem">
+              Name
+              <p-sortIcon field="name" />
+          </th>
+          <th pSortableColumn="Email" style="min-width: 8rem">
+              Email
+              <p-sortIcon field="Email" />
+          </th>
+          <th pSortableColumn="Phone" style="min-width:10rem">
+            Phone
+              <p-sortIcon field="Phone" />
+          </th>
+      </tr>
+  </ng-template>
+  <ng-template #body let-employee>
+      <tr>
+          <td style="width: 3rem">
+              <p-tableCheckbox [value]="employee" />
+          </td>
+          <td style="min-width: 12rem">{{ employee.id }}</td>
+          <td style="min-width: 16rem">{{ employee.name }}</td>
+          
+          <td>{{ employee.email }}</td>
+          <td>{{ employee.phone }}</td>
+      </tr>
+  </ng-template>
+  <ng-template #summary>
+      <div class="flex items-center justify-between">In total there are {{ employees ? employees.length : 0 }} Employee.</div>
+  </ng-template>
+</p-table>
+
+
+<!--add employee modal-->
+<p-dialog [(visible)]="employeeADialog" [style]="{ width: '450px' }" header="Add New Employee" [modal]="true">
+  <form [formGroup]="employeeForm" (ngSubmit)="submitNewEmp()">
+    <div class="flex flex-col gap-6">
+      <div>
+        <label for="name" class="block font-bold mb-3">Name</label>
+        <input type="text" style="width: 23rem;" pInputText id="name" formControlName="name" required autofocus />
+        <br>
+        <small *ngIf="employeeForm.get('name')?.invalid && employeeForm.get('name')?.touched">
+          Name is required and must be at least 3 characters long.
+        </small>
+        <br> 
+        <label for="email" class="block font-bold mb-3">Email</label>
+        <input type="text" style="width: 23rem;" mask="abc@gmail.com" placeholder="abc@gmail.com" pInputText id="email" formControlName="email" required />
+        <br>
+        <small *ngIf="employeeForm.get('email')?.invalid && employeeForm.get('email')?.touched">
+          Valid email is required.
+        </small>
+        <br> 
+        <label for="phone"  class="block font-bold mb-3">Phone</label>
+        <input type="text" style="width: 23rem;" mask="(999) 999-9999" placeholder="(999) 999-9999" pInputText id="phone" formControlName="phone" required />
+        <br>
+        <small *ngIf="employeeForm.get('phone')?.invalid && employeeForm.get('phone')?.touched">
+          Phone must contain only numbers.
+        </small>
+      </div>
+    </div>
+    <br> 
+    <p-footer>
+      <p-button label="Cancel" icon="pi pi-times" text (click)="hideDialog()" />
+      <p-button label="Add" icon="pi pi-check" type="submit" [disabled]="employeeForm.invalid" />
+    </p-footer>
+  </form>
+</p-dialog>
+
+
+<!--update employee modal-->
+<p-dialog [(visible)]="employeeDialog" [style]="{ width: '450px' }" header="Update Employee's Details" [modal]="true">
+  <form [formGroup]="employeeForm" (ngSubmit)="onSubmit()">
+    <div class="flex flex-col gap-6">
+      <div>
+        <label for="name" class="block font-bold mb-3">Name</label>
+        <input type="text" style="width: 23rem;" pInputText id="name" formControlName="name" required autofocus />
+        <small *ngIf="employeeForm.get('name')?.invalid && employeeForm.get('name')?.touched">
+          Name is required and must be at least 3 characters long.
+        </small>
+        <br> 
+        <label for="email"  class="block font-bold mb-3">Email</label>
+        <input type="text" style="width: 23rem;" mask="abc@gmail.com" placeholder="abc@gmail.com" pInputText id="email" formControlName="email" required />
+        <small *ngIf="employeeForm.get('email')?.invalid && employeeForm.get('email')?.touched">
+          Valid email is required.
+        </small>
+        <br> 
+        <label for="phone"  class="block font-bold mb-3">Phone</label>
+        <input type="text" style="width: 23rem;" mask="(999) 999-9999" placeholder="(999) 999-9999" pInputText id="phone" formControlName="phone" required />
+        <small *ngIf="employeeForm.get('phone')?.invalid && employeeForm.get('phone')?.touched">
+          Phone must contain only numbers.
+        </small>
+      </div>
+    </div>
+    <br> 
+
+    <p-footer>
+      <p-button label="Cancel" icon="pi pi-times" text (click)="hideDialog()" />
+      <p-button label="Update" icon="pi pi-check" type="submit" [disabled]="employeeForm.invalid" />
+    </p-footer>
+  </form>
+</p-dialog>
+
+
+<!--detail employee modal-->
+<p-dialog [(visible)]="employeeDDialog" [style]="{ width: '450px' }" header="Employee Details" [modal]="true">
+<form [formGroup]="employeeForm">
+  <div class="flex flex-col gap-6">
+    <div  style="margin-bottom: 20px;">
+      <label for="name" class="mb-3"><b>Name : </b> {{employeeForm.get('name')?.value}}</label>
+      <br> 
+      <label for="email" class="mb-3"><b>Email : </b> {{employeeForm.get('email')?.value}}</label>
+      <br>
+      <label for="phone" class="mb-3"><b>Phone : </b> {{employeeForm.get('phone')?.value}}</label>
+    </div>
+  </div>
+  <p-footer>
+    <p-button label="Cancel" icon="pi pi-times" text (click)="hideDialog()" />
+  </p-footer>
+</form>
+</p-dialog>
+
+
+<p-confirmDialog [style]="{ width: '450px' }" />
+<!--
+<div class="grid">
+  <div class="col-6 col-offset-3">
+      <div class="text-center p-3 border-round-sm bg-primary font-bold"> Employee List 
+      </div>
+      <button (click)="addEmployee()" class="btn btn-success">Add</button>
+
+  </div>
+</div>
+
+<div class="grid">
+  <div class="col">
+      <div class="text-center p-3 border-round-sm bg-primary font-bold"></div>
+      <div class="flex justify-center mb-4">
+        <p-selectbutton
+            [options]="sizes"
+            [(ngModel)]="selectedSize"
+            [multiple]="false"
+            optionLabel="name"
+            optionValue="class" />
+    </div>
+      <div class="mb-4">
+        <p-button type="button" icon="pi pi-chevron-left" (click)="prev()" [disabled]="isFirstPage()" text />
+        <p-button type="button" icon="pi pi-refresh" (click)="reset()" text />
+        <p-button type="button" icon="pi pi-chevron-right" (click)="next()" [disabled]="isLastPage()" text />
+    </div>
+    <p-table
+        [value]="employees"
+        [paginator]="true"
+        [rows]="5"
+        [first]="first"
+        [showCurrentPageReport]="true"
+        [tableStyle]="{ 'min-width': '50rem' }"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries"
+        (onPage)="pageChange($event)"
+        [rowsPerPageOptions]="[10, 25, 50]"
+    >
+        <ng-template #header>
+            <tr>
+                <th style="width:25%">ID</th>
+                <th style="width:25%">Name</th>
+                <th style="width:25%">Email</th>
+                <th style="width:25%">Phone</th>
+                <th style="width:25%">Actions</th>
+
+            </tr>
+        </ng-template>
+        <ng-template #body let-employee >
+            <tr>
+              <tr>
+                <td>{{ employee.id }}</td>
+                <td>{{ employee.name }}</td>
+                <td>{{ employee.email }}</td>
+                <td>{{ employee.phone }}</td>
+                <td>
+                  <nav>
+                    <button (click)="updateEmployee(employee.id)" class="btn btn-warning">Update</button>
+                    <button (click)="detailEmployee(employee.id)" class="btn btn-info" style="margin-left: 10px">View</button>
+                    <button (click) = "deleteEmployee(employee.id)" class = "btn btn-danger" style="margin-left: 10px"> Delete</button>
+                  </nav>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template #paginatorleft>
+            <p-button type="button" icon="pi pi-plus" text />
+        </ng-template>
+        <ng-template #paginatorright>
+            <p-button type="button" icon="pi pi-cloud" text />
+        </ng-template>
+    </p-table>
+  </div>
+</div>
+-->
+<!--
+<div class="container">
+  <h2>Employee List</h2>
+  <button (click)="addEmployee()" class="btn btn-success">Add</button>
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Email</th>
+        <th>Phone</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let employee of employees; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td>{{ employee.name }}</td>
+        <td>{{ employee.email }}</td>
+        <td>{{ employee.phone }}</td>
+        <td>
+          <nav>
+            <button (click)="updateEmployee(employee.id)" class="btn btn-warning">Update</button>
+            <button (click)="detailEmployee(employee.id)" class="btn btn-info" style="margin-left: 10px">View</button>
+            <button (click) = "deleteEmployee(employee.id)" class = "btn btn-danger" style="margin-left: 10px"> Delete</button>
+          </nav>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+-->
